@@ -5,7 +5,7 @@ const pool = require('../config/db');
 
 const router = express.Router();
 
-// POST /api/devices
+// Rutas sin parámetros dinámicos (van primero)
 router.post('/', auth, async (req, res) => {
   try {
     const { type, model, year, materials } = req.body;
@@ -26,6 +26,21 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+// ✅ ¡Esta ruta fija debe ir ANTES de cualquier ruta con :id!
+router.get('/mine', auth, async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      'SELECT * FROM devices WHERE user_id = ? ORDER BY created_at DESC',
+      [req.user.id]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('Error al obtener dispositivos del usuario:', err);
+    res.status(500).json({ error: 'Error al cargar tus dispositivos' });
+  }
+});
+
+// Rutas con parámetros dinámicos (van después)
 // GET /api/devices/:id
 router.get('/:id', auth, async (req, res) => {
   try {
@@ -43,26 +58,41 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
+// GET /api/devices/:id/decisions
+router.get('/:id/decisions', auth, async (req, res) => {
+  try {
+    const deviceId = req.params.id;
+    const device = await Device.findById(deviceId);
+    if (!device || device.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Acceso denegado' });
+    }
+    const [rows] = await pool.execute(
+      'SELECT * FROM decisions WHERE device_id = ? ORDER BY created_at ASC',
+      [deviceId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('Error al obtener decisiones:', err);
+    res.status(500).json({ error: 'Error al obtener las decisiones' });
+  }
+});
+
 // POST /api/devices/:id/decisions
 router.post('/:id/decisions', auth, async (req, res) => {
   try {
     const { stage, decision } = req.body;
     const deviceId = req.params.id;
-
     if (!stage || !decision) {
       return res.status(400).json({ error: 'Etapa y decisión son requeridas' });
     }
-
     const device = await Device.findById(deviceId);
     if (!device || device.user_id !== req.user.id) {
       return res.status(403).json({ error: 'Acceso denegado' });
     }
-
     const [result] = await pool.execute(
       'INSERT INTO decisions (device_id, stage, decision) VALUES (?, ?, ?)',
       [deviceId, stage, decision]
     );
-
     res.status(201).json({ id: result.insertId, stage, decision });
   } catch (err) {
     console.error('Error al guardar decisión:', err);
@@ -70,26 +100,22 @@ router.post('/:id/decisions', auth, async (req, res) => {
   }
 });
 
-// ✅ ✅ ✅ AGREGA ESTA RUTA (faltaba) ✅ ✅ ✅
-// GET /api/devices/:id/decisions
-router.get('/:id/decisions', auth, async (req, res) => {
+// ✅ DELETE /api/devices/:id → ¡Debe ir al FINAL de las rutas con :id!
+router.delete('/:id', auth, async (req, res) => {
   try {
     const deviceId = req.params.id;
-
     const device = await Device.findById(deviceId);
     if (!device || device.user_id !== req.user.id) {
       return res.status(403).json({ error: 'Acceso denegado' });
     }
-
-    const [rows] = await pool.execute(
-      'SELECT * FROM decisions WHERE device_id = ? ORDER BY created_at ASC',
-      [deviceId]
-    );
-
-    res.json(rows);
+    // Eliminar decisiones asociadas
+    await pool.execute('DELETE FROM decisions WHERE device_id = ?', [deviceId]);
+    // Eliminar dispositivo
+    await pool.execute('DELETE FROM devices WHERE id = ?', [deviceId]);
+    res.json({ message: 'Dispositivo eliminado correctamente' });
   } catch (err) {
-    console.error('Error al obtener decisiones:', err);
-    res.status(500).json({ error: 'Error al obtener las decisiones' });
+    console.error('Error al eliminar dispositivo:', err);
+    res.status(500).json({ error: 'Error al eliminar el dispositivo' });
   }
 });
 
