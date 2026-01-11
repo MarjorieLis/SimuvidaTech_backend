@@ -1,7 +1,7 @@
 const express = require('express');
 const Device = require('../models/Device');
 const { auth } = require('../middleware/auth');
-const pool = require('../config/db'); // ← ¡Importante!
+const pool = require('../config/db');
 
 const router = express.Router();
 
@@ -43,24 +43,21 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
-// ✅ ✅ ✅ AGREGA ESTA RUTA (faltaba) ✅ ✅ ✅
+// POST /api/devices/:id/decisions
 router.post('/:id/decisions', auth, async (req, res) => {
   try {
     const { stage, decision } = req.body;
     const deviceId = req.params.id;
 
-    // Validar datos
     if (!stage || !decision) {
       return res.status(400).json({ error: 'Etapa y decisión son requeridas' });
     }
 
-    // Verificar que el dispositivo pertenece al usuario
     const device = await Device.findById(deviceId);
     if (!device || device.user_id !== req.user.id) {
       return res.status(403).json({ error: 'Acceso denegado' });
     }
 
-    // Guardar en la tabla `decisions`
     const [result] = await pool.execute(
       'INSERT INTO decisions (device_id, stage, decision) VALUES (?, ?, ?)',
       [deviceId, stage, decision]
@@ -70,6 +67,29 @@ router.post('/:id/decisions', auth, async (req, res) => {
   } catch (err) {
     console.error('Error al guardar decisión:', err);
     res.status(500).json({ error: 'Error al guardar la decisión' });
+  }
+});
+
+// ✅ ✅ ✅ AGREGA ESTA RUTA (faltaba) ✅ ✅ ✅
+// GET /api/devices/:id/decisions
+router.get('/:id/decisions', auth, async (req, res) => {
+  try {
+    const deviceId = req.params.id;
+
+    const device = await Device.findById(deviceId);
+    if (!device || device.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Acceso denegado' });
+    }
+
+    const [rows] = await pool.execute(
+      'SELECT * FROM decisions WHERE device_id = ? ORDER BY created_at ASC',
+      [deviceId]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error('Error al obtener decisiones:', err);
+    res.status(500).json({ error: 'Error al obtener las decisiones' });
   }
 });
 
