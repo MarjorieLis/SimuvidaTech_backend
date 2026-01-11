@@ -1,6 +1,4 @@
 # SimuVidaTech
-
-![SimuVidaTech Banner](https://via.placeholder.com/800x200/065f46/ffffff?text=SimuVidaTech+-+Impacto+Ambiental)  
 *Una herramienta educativa para visualizar el impacto ambiental de los dispositivos electrónicos*
 
 ## Descripción del proyecto
@@ -135,6 +133,6 @@ La aplicación demuestra cómo la tecnología puede ser una herramienta educativ
 - Mostrar la relación directa entre comportamientos individuales y consecuencias ambientales
 
 ### Autores
-Marjorie Lisseth Jiménez Jiménez, Madeleine Yanhely Jiménez Gaona, Cristina Lisbeth Orellana Esparza
-Estudiantes de la Universidad Internacional del Ecuador
-Materias: Ecología y Medio Ambiente Tecnológico | Interfaces y Multimedia
+- Marjorie Lisseth Jiménez Jiménez, Madeleine Yanhely Jiménez Gaona, Cristina Lisbeth Orellana Esparza
+- Estudiantes de la Universidad Internacional del Ecuador
+- Materias: Ecología y Medio Ambiente Tecnológico | Interfaces y Multimedia
