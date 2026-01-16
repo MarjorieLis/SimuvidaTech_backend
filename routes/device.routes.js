@@ -71,10 +71,13 @@ router.get('/:id', auth, async (req, res) => {
     if (!device) {
       return res.status(404).json({ error: 'Dispositivo no encontrado' });
     }
-    if (device.user_id !== req.user.id) {
+    
+    // ✅ Permitir acceso si es admin O es el dueño
+    if (req.user.role === 'admin' || device.user_id === req.user.id) {
+      res.json(device);
+    } else {
       return res.status(403).json({ error: 'Acceso denegado' });
     }
-    res.json(device);
   } catch (err) {
     console.error('Error al obtener dispositivo:', err);
     res.status(500).json({ error: 'Error al obtener el dispositivo' });
