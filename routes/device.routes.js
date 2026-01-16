@@ -40,6 +40,29 @@ router.get('/mine', auth, async (req, res) => {
   }
 });
 
+// ✅ ¡ESTA RUTA DEBE IR ANTES DE LAS RUTAS CON :id!
+router.get('/admin', auth, async (req, res) => {
+  try {
+    // Verificar que el usuario es administrador
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Acceso denegado' });
+    }
+
+    // Obtener TODOS los dispositivos de todos los usuarios
+    const [rows] = await pool.execute(`
+      SELECT d.*, u.email as user_email 
+      FROM devices d 
+      JOIN users u ON d.user_id = u.id 
+      ORDER BY d.created_at DESC
+    `);
+
+    res.json(rows);
+  } catch (err) {
+    console.error('Error al obtener dispositivos para admin:', err);
+    res.status(500).json({ error: 'Error al cargar los dispositivos' });
+  }
+});
+
 // Rutas con parámetros dinámicos (van después)
 // GET /api/devices/:id
 router.get('/:id', auth, async (req, res) => {
