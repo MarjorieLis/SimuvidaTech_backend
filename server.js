@@ -18,7 +18,7 @@ app.use(express.json());
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/devices', require('./routes/device.routes'));
 app.use('/api/users', require('./routes/user.routes'));
-app.use('/api/decisions', require('./routes/decision.routes'));
+app.use('/api/devices', require('./routes/decision.routes'));  
 
 // Manejador de errores
 app.use((err, req, res, next) => {
