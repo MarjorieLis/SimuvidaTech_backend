@@ -4,50 +4,46 @@ const pool = require('../config/db');
 
 const router = express.Router();
 
-// ✅ ENDPOINT PARA GUARDAR DECISIONES (FALTABA ESTE)
-router.post('/:id/decisions', auth, async (req, res) => {
+// ✅ GUARDAR una decisión de simulación
+router.post('/device/:id', auth, async (req, res) => {
   try {
     const { stage, decision } = req.body;
     const deviceId = req.params.id;
-    const userId = req.user.id;
 
     // Validaciones
     if (!stage || !decision) {
       return res.status(400).json({ error: 'Stage y decision son requeridos' });
     }
 
-    // Insertar en base de datos
+    // Insertar en base de datos (columnas reales: device_id, stage, decision)
     const [result] = await pool.execute(
-      'INSERT INTO decisions (deviceId, userId, stage, decision, timestamp) VALUES (?, ?, ?, ?, NOW())',
-      [deviceId, userId, stage, decision]
+      'INSERT INTO decisions (device_id, stage, decision) VALUES (?, ?, ?)',
+      [deviceId, stage, decision]
     );
 
-    console.log('✅ Decisión guardada:', { 
-      id: result.insertId, 
-      deviceId, 
-      userId, 
-      stage, 
-      decision 
-    });
-
-    res.status(201).json({ 
+    console.log('✅ Decisión guardada:', {
       id: result.insertId,
       deviceId,
-      userId,
       stage,
-      decision,
-      timestamp: new Date().toISOString()
+      decision
+    });
+
+    res.status(201).json({
+      id: result.insertId,
+      deviceId,
+      stage,
+      decision
     });
   } catch (err) {
     console.error('❌ Error al guardar decisión:', err.message || err);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Error al guardar decisión',
       details: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }
 });
 
-// ✅ ENDPOINT PARA ADMIN (ya existía, lo mantenemos)
+// ✅ ENDPOINT PARA ADMIN — estadísticas agrupadas
 router.get('/admin', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
