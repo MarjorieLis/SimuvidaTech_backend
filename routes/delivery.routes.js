@@ -5,6 +5,31 @@ const Delivery = require('../models/Delivery');
 
 const router = express.Router();
 
+// ✅ Auto-crear tabla deliveries si no existe
+(async () => {
+    try {
+        const pool = require('../config/db');
+        await pool.execute(`
+      CREATE TABLE IF NOT EXISTS deliveries (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        device_id INT NOT NULL,
+        user_id INT NOT NULL,
+        token VARCHAR(64) NOT NULL UNIQUE,
+        status ENUM('pending', 'verified') DEFAULT 'pending',
+        verified_by INT DEFAULT NULL,
+        verified_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (verified_by) REFERENCES users(id) ON DELETE SET NULL
+      )
+    `);
+        console.log('✅ Tabla deliveries verificada/creada');
+    } catch (err) {
+        console.error('⚠️ No se pudo verificar tabla deliveries:', err.message);
+    }
+})();
+
 // ✅ POST /api/deliveries — Crear entrega pendiente (usuario autenticado)
 router.post('/', auth, async (req, res) => {
     try {
